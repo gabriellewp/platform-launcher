@@ -401,9 +401,7 @@ var test = function(userToken, accountId, deviceId, deviceToken, cbManager, mqtt
       return "Wrong number of returned points";
     }
     points.forEach(function(element, index) {
-      if ((element.ts != dataValues[index].ts) ||
-        ((Math.abs(element.value - dataValues[index].value)) > MIN_NUMBER) ||
-        !locEqual(dataValues[index], element, onlyExistingAttr) ||
+      if ((Math.abs(element.value - dataValues[index].value) > MIN_NUMBER) ||        !locEqual(dataValues[index], element, onlyExistingAttr) ||
         !attrEqual(dataValues[index], element, onlyExistingAttr)) {
         result = false;
         reason = "Point " + JSON.stringify(element) + " does not fit to expected value " +
@@ -472,9 +470,23 @@ var test = function(userToken, accountId, deviceId, deviceToken, cbManager, mqtt
       .catch((err) => {done(err);});
     },
 
-    "sendMultipleDataPoints" : function(done){
-      
-    },
+    "retrieveSentData" : function(done){
+          var listOfExpectedResults = flattenArray(dataValues1);
+          promtests.searchData(Date.now() - 1000000, -1, deviceToken, accountId, newDeviceId, componentId[0], false, {})
+            .then((result) => {
+              if (result.series.length != 1) done("Wrong number of point series!");
+              var comparisonResult = comparePoints(listOfExpectedResults, result.series[0].points);
+              if (comparisonResult === true) {
+                done();
+              } else {
+                done(comparisonResult);
+              }
+            })
+            .catch((err) => {
+              done(err);
+            });
+        },
+
 
     "waitForBackendSynchronization": function(done) {
       setTimeout(done, 2000);
