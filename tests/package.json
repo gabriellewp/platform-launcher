@@ -22,6 +22,6 @@
     "cbor": "^4.1.5",
     "gm": "^1.23.1",
     "mqtt": "^2.13.1",
-    "@open-iot-service-platform/oisp-sdk-js": "https://github.com/Open-IoT-Service-Platform/oisp-sdk-js.git#556349593642e4d9297445e70116dbdabfa979fb"
+    "@open-iot-service-platform/oisp-sdk-js": "https://github.com/Open-IoT-Service-Platform/oisp-sdk-js.git#a7641ef3a323fff5fd61e429359ca2c7cb0d27c8"
   }
 }

@@ -50,16 +50,13 @@ var test = function(userToken, accountId, deviceId, deviceToken, cbManager, mqtt
   const MIN_NUMBER = 0.0001;
   const MAX_SAMPLES = 1000;
   const BASE_TIMESTAMP = 1000000000000
-  //console.log("bypassmqttsubtest0")
-  //console.log("default_connector", (config.default_connector))
-  // helpers.connector.mqttConnect(proxyConnector, deviceToken, deviceId, cbManager.cb);
 
   var dataValues1 = [
     [{
       component: 0,
       value: 10.1,
       ts: 1 + BASE_TIMESTAMP
-    }],
+    }]/*,
     [{
       component: 0,
       value: 11.2,
@@ -131,8 +128,7 @@ var test = function(userToken, accountId, deviceId, deviceToken, cbManager, mqtt
       value: 25.5,
       ts: 15 + BASE_TIMESTAMP
     }
-
-    ]
+  ]*/
   ];
 
 
@@ -476,6 +472,10 @@ var test = function(userToken, accountId, deviceId, deviceToken, cbManager, mqtt
       .catch((err) => {done(err);});
     },
 
+    "sendMultipleDataPoints" : function(done){
+      
+    },
+
     "waitForBackendSynchronization": function(done) {
       setTimeout(done, 2000);
 
@@ -495,6 +495,7 @@ var descriptions = {
   "cleanup": "Cleanup components, commands, rules created for subtest",
   "sendAggregatedDataPoints": "Shall send multiple datapoints for one component",
   "sendSingleDataPoint": "Send a single data point",
+  "retrieveSentData": "Retrieve sent data points",
   "waitForBackendSynchronization": "Waiting maximal tolerable time backend needs to flush so that points are available",
   "setup": "Setup device and components for subtest"
 };

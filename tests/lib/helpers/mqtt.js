@@ -19,7 +19,9 @@
 // Helper Functions
 //-------------------------------------------------------------------------------------------------------
 
-var Metric = require('../data/Metric.data').init();
+var oispSdk = require("@open-iot-service-platform/oisp-sdk-js");
+var config = require("../../test-config-mqtt.json");
+var Metric = oispSdk(config).lib.data.metric.init();
 
 
 function setCredential(connector, deviceToken, deviceId, cb) {
