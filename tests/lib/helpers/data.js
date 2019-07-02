@@ -134,7 +134,7 @@ function submitData(testApi, value, deviceToken, accountId, deviceId, cid, cb) {
             on: ts,
             data: [{
                 componentId: cid,
-                value: value.toString(),
+                value: Buffer.isBuffer(value) ? value : value.toString(),
                 on: ts
             }]
         }
@@ -217,9 +217,8 @@ function submitDataList(testApi, valueList, deviceToken, accountId, deviceId, ci
 
     valueList.forEach(function(element){
       var toPush = {
-        //componentId: cidList[element.component],
-        componentId: cidList,
-        value: element.value.toString(),
+        componentId: cidList[element.component],
+        value: (typeof element.value === 'string' || Buffer.isBuffer(element.value)) ? element.value : element.value.toString(),
         on: element.ts
       }
       if (element.loc) {

@@ -389,6 +389,7 @@ var activateDevice = (userToken, accountId, deviceId) => {
   });
 };
 
+
 var mqttSetCredential = (connector, userToken, deviceId) => {
   return new Promise(function(resolve, reject){
     helpers.mqtt.setCredential(connector, userToken, deviceId, function(err, response) {
@@ -412,7 +413,33 @@ var mqttSubmitData = (connector, value, deviceToken, accountId, deviceId, cid) =
     });
   });
 };
+
+var activateDeviceWithoutToken = (activationCode, deviceId) => {
+    return new Promise(function(resolve, reject){
+        helpers.devices.activateDeviceWithoutToken(activationCode, deviceId, function(err, response) {
+            if (err) {
+                reject(err);
+  	        } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+var getAccountActivationCode = (accountId, userToken) => {
+    return new Promise(function(resolve, reject){
+        helpers.accounts.getAccountActivationCode(accountId, userToken, function(err, response) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
 module.exports = {
+    getAccountActivationCode: getAccountActivationCode,
     checkObservations: checkObservations,
     addComponent: addComponent,
     addActuator: addActuator,
@@ -436,5 +463,6 @@ module.exports = {
     deleteDevice: deleteDevice,
     activateDevice: activateDevice,
     mqttSetCredential: mqttSetCredential,
-    mqttSubmitData: mqttSubmitData
+    mqttSubmitData: mqttSubmitData,
+    activateDeviceWithoutToken: activateDeviceWithoutToken
 };

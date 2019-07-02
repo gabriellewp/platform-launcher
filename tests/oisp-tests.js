@@ -45,11 +45,11 @@ var switchOffCmdName = "switch-off";
 var emailRecipient = "test.receiver@streammyiot.com"
 
 var imap_username = process.env.IMAP_USERNAME;
-var imap_password = process.env.IMAP_PASSWORD; 
+var imap_password = process.env.IMAP_PASSWORD;
 var imap_host     = process.env.IMAP_HOST;
 var imap_port     = process.env.IMAP_PORT;
 
-var recipientEmail = imap_username; 
+var recipientEmail = imap_username;
 var rules = [];
 
 
@@ -70,15 +70,85 @@ var highTemperatureRule = new Rule("oisp-tests-rule-high-temp",">", 25);
 //-------------------------------------------------------------------------------------------------------
 var components = new Components()
 
-components.add( new Component("temperatures", "Number", "float", "Degress Celsius", "timeSeries", -150, 150, 
+components.add( new Component("temperatures", "Number", "float", "Degress Celsius", "timeSeries", -150, 150,
                     [lowTemperatureRule, highTemperatureRule],
                     temperatureData, temperatureCheckData)
                 );
 
-components.add( new Component("images", "ByteArray", "image/jpeg", "pixel", "binaryDataRenderer", null, null, 
+components.add( new Component("images", "ByteArray", "image/jpeg", "pixel", "binaryDataRenderer", null, null,
                     [],
                     imageData, imageCheckData)
                 );
+
+components.add(new Component("metaData", "String", "JSON", "text", "binaryDataRenderer", null, null,
+                    [],
+                    stringData, stringCheckData)
+                );
+
+components.add(new Component("binaryState", "Boolean", "state", "bool", "timeSeries", null, null,
+                    [],
+                    boolData, boolCheckData)
+                );
+
+function boolData(componentName) {
+  var data = [
+          new Data("1", null, null),
+          new Data("0", null, null),
+          new Data("1", null, null)
+      ];
+  return data;
+}
+
+function boolCheckData(sentData, receivedData) {
+    if ( sentData.length == receivedData.length) {
+        for (var i = 0; i < sentData.length; i++) {
+            if (sentData[i].ts == receivedData[i].ts && sentData[i].value === receivedData[i].value) {
+                sentData[i].ts = null;
+            }
+        }
+    }
+
+    var err = null;
+    for (var i = 0; i < sentData.length; i++) {
+        if (sentData[i].ts != null) {
+            err += "[" + i + "]=" + sentData[i].value + " ";
+        }
+    }
+    if (err) {
+        err = "Got wrong data for " + err;
+    }
+    return err;
+}
+
+function stringData(componentName) {
+  var data = [
+          new Data('{}', null, null),
+          new Data('{value: "hello world"}', null, null),
+          new Data('{meta: "Camera1", enabled: true, numObjects: 23, calibration: 1.4}', null, null)
+      ];
+  return data;
+}
+
+function stringCheckData(sentData, receivedData) {
+    if ( sentData.length == receivedData.length) {
+        for (var i = 0; i < sentData.length; i++) {
+            if (sentData[i].ts == receivedData[i].ts && sentData[i].value === receivedData[i].value) {
+                sentData[i].ts = null;
+            }
+        }
+    }
+
+    var err = null;
+    for (var i = 0; i < sentData.length; i++) {
+        if (sentData[i].ts != null) {
+            err += "[" + i + "]=" + sentData[i].value + " ";
+        }
+    }
+    if (err) {
+        err = "Got wrong data for " + err;
+    }
+    return err;
+}
 
 function temperatureData(componentName) {
 
@@ -129,11 +199,11 @@ function imageData(componentName, opaque, cb) {
     var images = [
         new gm(100, 200, "red"),
         new gm(400, 600, "white"),
-        new gm(1280, 720, "blue")
+        new gm(500, 720, "blue")
     ];
 
     images.forEach(function(image) {
-        image.toBuffer("JPEG", function(err, buffer) {
+        image.toBuffer("RGB", function(err, buffer) {
             if (!err) {
                 cb(opaque, new Data(buffer, null, null))
             }
@@ -172,16 +242,17 @@ function imageCheckData(sentData, receivedData) {
 // Tests
 //-------------------------------------------------------------------------------------------------------
 var userToken;
+var userToken2;
 var receiverToken;
 var receiveruserId;
 var receiveraccountId;
-var userId; 
+var userId;
 var accountId;
 var deviceId;
 var deviceToken;
 var actuatorId;
 var rulelist;
-var componentParamName; 
+var componentParamName;
 var firstObservationTime;
 
 
@@ -203,9 +274,10 @@ var cbManager = function(){
 
 
 describe("Waiting for OISP services to be ready ...\n".bold, function() {
-    
+
     before(function(done) {
         userToken = null;
+        userToken2 = null;
         accountId = null;
         deviceId = "00-11-22-33-44-55";
         deviceToken = null;
@@ -275,26 +347,38 @@ describe("Waiting for OISP services to be ready ...\n".bold, function() {
                   done(new Error("Cannot get Kafka offset "))
             }
         });
-       
+
     }).timeout(2*60*1000);
 })
 
 describe("get authorization and manage user ...\n".bold, function() {
-      
+
     it('Shall authenticate', function(done) {
         var username = process.env.USERNAME;
         var password = process.env.PASSWORD;
-       
+
+        var username2 = process.env.USERNAME2;
+        var password2 = process.env.PASSWORD2;
+
         assert.isNotEmpty(username, "no username provided");
         assert.isNotEmpty(password, "no password provided");
+        assert.isNotEmpty(username, "no username2 provided");
+        assert.isNotEmpty(password, "no password2 provided");
 
         helpers.auth.login(username, password, function(err, token) {
             if (err) {
                 done(new Error("Cannot authenticate: " + err));
             } else {
                 userToken = token;
-                done();
-            }   
+                helpers.auth.login(username2, password2, function(err, token) {
+                    if (err) {
+                        done(new Error("Cannot authenticate: " + err));
+                    } else {
+                        userToken2 = token;
+                    }
+                    done();
+                });
+            }
         })
     })
 
@@ -314,7 +398,7 @@ describe("get authorization and manage user ...\n".bold, function() {
             }
         })
     })
-    
+
     it('Shall get user information', function(done) {
         helpers.users.getUserInfo(userToken, userId, function(err, response) {
             if (err) {
@@ -325,7 +409,7 @@ describe("get authorization and manage user ...\n".bold, function() {
             }
         })
     })
-   
+
     it('Shall update user information', function(done) {
         var newuserInfo = {
             attributes:{
@@ -334,7 +418,7 @@ describe("get authorization and manage user ...\n".bold, function() {
                 "new":"next_string_value"
             }
         }
-          
+
         helpers.users.updateUserInfo(userToken, userId, newuserInfo, function(err, response) {
             if (err) {
                 done(new Error("Cannot update user information : " + err));
@@ -360,7 +444,7 @@ describe("Creating account and device ...\n".bold, function() {
                 accountId = response.id;
                 done();
             }
-        }) 
+        })
     })
 
     it('Shall get account info', function (done) {
@@ -415,7 +499,7 @@ describe("Creating account and device ...\n".bold, function() {
     })
 
     it('Shall list all users for account', function (done) {
-        
+
         helpers.accounts.getAccountUsers(accountId, userToken, function (err, response) {
             if (err) {
                 done(new Error("Cannot list users for account: " + err));
@@ -456,7 +540,7 @@ describe("Creating account and device ...\n".bold, function() {
             gatewayId: deviceId,
             name: deviceName,
             loc: [ 45.12345, -130.654321, 121.1],
-            tags: ["tag001", "tag002"],   
+            tags: ["tag001", "tag002"],
             attributes: {
                 vendor: "intel",
                 platform: "x64",
@@ -485,7 +569,7 @@ describe("Creating account and device ...\n".bold, function() {
             }
         })
     })
-        
+
     it('Shall list all attributes for device', function(done) {
         var attributes = {
             vendor: ["intel"],
@@ -525,7 +609,7 @@ describe("Creating account and device ...\n".bold, function() {
             }
         })
     })
-    
+
     it('Shall activate device', function(done) {
         assert.notEqual(deviceId, null, "Invalid device id")
 
@@ -539,7 +623,7 @@ describe("Creating account and device ...\n".bold, function() {
             }
         })
     })
-    
+
     it('Shall get detail of one device', function(done) {
 
         helpers.devices.getDeviceDetails(userToken, accountId, deviceId, function(err, response) {
@@ -555,6 +639,24 @@ describe("Creating account and device ...\n".bold, function() {
         })
     })
 })
+
+describe("Device Activation Subtests".bold, function() {
+    var test;
+    var descriptions = require("./subtests/device-activation-tests").descriptions;
+    it(descriptions.prepareSetup, function(done) {
+        test = require("./subtests/device-activation-tests").test(userToken, accountId);
+        test.prepareSetup(done);
+    }).timeout(10000);
+    it(descriptions.activateExistingDeviceWithoutToken, function(done) {
+        test.activateExistingDeviceWithoutToken(done);
+    }).timeout(10000);
+    it(descriptions.activateNotExistingDeviceWithoutToken, function(done) {
+        test.activateNotExistingDeviceWithoutToken(done);
+    }).timeout(10000);
+    it(descriptions.cleanup, function(done) {
+        test.cleanup(done);
+    }).timeout(10000);
+});
 
 describe("Managing components catalog ... \n".bold, function() {
 
@@ -668,7 +770,7 @@ describe("Creating and getting components ... \n".bold, function() {
         addDeviceComponent(components.first);
 
     }).timeout(10000);
-    
+
     it('Shall not add device a component with the name that a component of the device already has, or crash', function(done) {
         var addDeviceComponent = function(component) {
             if ( component ) {
@@ -758,7 +860,7 @@ describe("Creating and getting components ... \n".bold, function() {
         })
 
     }).timeout(20000);
-    
+
 });
 var ignoreagain=function(){
 
@@ -810,7 +912,7 @@ describe("Creating rules ... \n".bold, function() {
                                 }
                             }
                             if ( !found ) {
-                                done(new Error("rule " + rule.name + " not found")); 
+                                done(new Error("rule " + rule.name + " not found"));
                             }
                         })
                     }
@@ -879,7 +981,7 @@ describe("Sending observations and checking rules ...\n".bold, function() {
                 }
                 process.stdout.write(".".green);
 
-                helpers.devices.submitData(component.data[component.dataIndex].value, deviceToken, 
+                helpers.devices.submitData(component.data[component.dataIndex].value, deviceToken,
                                            accountId, deviceId, component.id, function(err, ts) {
                     component.data[component.dataIndex].ts = ts;
 
@@ -941,13 +1043,15 @@ describe("Sending observations and checking rules ...\n".bold, function() {
             done();
             }).catch( (err) => {done(err)});
         }).timeout(30 * 1000);
-
+    it('Wait for backend synchronization', function(done) {
+        setTimeout(done, 2000);
+    }).timeout(5000);
     it('Shall check observations', function(done) {
         var checkObservations = function(component) {
             if ( component ) {
                 if ( component.data.length > 0 ) {
 
-                    helpers.data.searchData(component.data[0].ts, component.data[component.data.length-1].ts, 
+                    helpers.data.searchData(component.data[0].ts, component.data[component.data.length-1].ts,
                                             userToken, accountId, deviceId, component.id, false, {}, function(err, result) {
                         if (err) {
                             done(new Error("Cannot get data: " + err))
@@ -980,41 +1084,6 @@ describe("Sending observations and checking rules ...\n".bold, function() {
 
 });
 
-describe("Do time based rule subtests ...".bold,
-     function() {
-         var test;
-         var descriptions = require("./subtests/timebased-rule-tests").descriptions;
-         it(descriptions.createTbRules,function(done) {
-         test = require("./subtests/timebased-rule-tests").test(userToken, accountId, deviceId, deviceToken, cbManager);
-         test.createTbRules(done);
-             }).timeout(10000);
-         it(descriptions.sendObservations,function(done) {
-         test.sendObservations(done);
-             }).timeout(120000);
-         it(descriptions.cleanup,function(done) {
-         test.cleanup(done);
-         }).timeout(10000);
-         });
-
-
-describe("Do statistics rule subtests ...".bold,
-     function() {
-         var test;
-         var descriptions = require("./subtests/statistic-rule-tests").descriptions;
-         it(descriptions.createStatisticsRules,function(done) {
-         test = require("./subtests/statistic-rule-tests").test(userToken, accountId, deviceId, deviceToken, cbManager);
-         test.createStatisticsRules(done);
-             }).timeout(10000)
-         it(descriptions.sendObservations,function(done) {
-         test.sendObservations(done);
-             }).timeout(50000);
-         it(descriptions.cleanup,function(done) {
-         test.cleanup(done);
-         }).timeout(10000);
-         });
-};
-
-
 describe("Do MQTT data sending subtests".bold, function() {
     var test;
     var descriptions = require("./subtests/mqtt-data-sending-tests").descriptions;
@@ -1036,13 +1105,44 @@ describe("Do MQTT data sending subtests".bold, function() {
     }).timeout(10000);*/
 });
 
-var ignoreme = function() {
+
+describe("Do time based rule subtests ...".bold,
+	 function() {
+	     var test;
+	     var descriptions = require("./subtests/timebased-rule-tests").descriptions;
+	     it(descriptions.createTbRules,function(done) {
+		 test = require("./subtests/timebased-rule-tests").test(userToken, accountId, deviceId, deviceToken, cbManager);
+		 test.createTbRules(done);
+             }).timeout(10000);
+	     it(descriptions.sendObservations,function(done) {
+		 test.sendObservations(done);
+             }).timeout(120000);
+	     it(descriptions.cleanup,function(done) {
+		 test.cleanup(done);
+	     }).timeout(10000);
+         });
+
+
+describe("Do statistics rule subtests ...".bold,
+	 function() {
+	     var test;
+	     var descriptions = require("./subtests/statistic-rule-tests").descriptions;
+	     it(descriptions.createStatisticsRules,function(done) {
+		 test = require("./subtests/statistic-rule-tests").test(userToken, accountId, deviceId, deviceToken, cbManager);
+		 test.createStatisticsRules(done);
+             }).timeout(10000)
+	     it(descriptions.sendObservations,function(done) {
+		 test.sendObservations(done);
+             }).timeout(50000);
+	     it(descriptions.cleanup,function(done) {
+		 test.cleanup(done);
+	     }).timeout(10000);
+         });
 describe("Do data sending subtests ...".bold,
   function() {
     var test;
     var descriptions = require("./subtests/data-sending-tests").descriptions;
-    
-    it(descriptions.sendAggregatedDataPoints,function(done) {
+     it(descriptions.sendAggregatedDataPoints,function(done) {
        test = require("./subtests/data-sending-tests").test(userToken, accountId, deviceId, deviceToken, cbManager);
        test.sendAggregatedDataPoints(done);
      }).timeout(10000);
@@ -1094,9 +1194,6 @@ describe("Do data sending subtests ...".bold,
      it(descriptions.sendMaxAmountOfSamples,function(done) {
        test.sendMaxAmountOfSamples(done);
      }).timeout(10000);
-     it(descriptions.receiveMaxAmountOfSamples,function(done) {
-       test.receiveMaxAmountOfSamples(done);
-     }).timeout(10000);
      it(descriptions.sendPartiallyWrongData,function(done) {
        test.sendPartiallyWrongData(done);
      }).timeout(10000);
@@ -1112,6 +1209,9 @@ describe("Do data sending subtests ...".bold,
      it(descriptions.waitForBackendSynchronization,function(done) {
        test.waitForBackendSynchronization(done);
      }).timeout(10000);
+     it(descriptions.receiveMaxAmountOfSamples,function(done) {
+       test.receiveMaxAmountOfSamples(done);
+     }).timeout(10000);
      it(descriptions.receivePartiallySentData,function(done) {
        test.receivePartiallySentData(done);
      }).timeout(10000);
@@ -1124,7 +1224,40 @@ describe("Do data sending subtests ...".bold,
      it(descriptions.cleanup,function(done) {
        test.cleanup(done);
      }).timeout(10000);
-   });
+ });
+
+describe("Grafana subtests...".bold, function() {
+    var test;
+    var descriptions = require("./subtests/grafana-tests").descriptions;
+    it(descriptions.prepareGrafanaTestSetup, function(done) {
+        test = require("./subtests/grafana-tests").test(userToken, userToken2);
+        test.prepareGrafanaTestSetup(done);
+    }).timeout(10000);
+    it(descriptions.checkGrafanaHeartbeat, function(done) {
+        test.checkGrafanaHeartbeat(done);
+    }).timeout(50000);
+    it(descriptions.authenticateGrafanaAsViewer, function(done) {
+        test.authenticateGrafanaAsViewer(done);
+    }).timeout(10000);
+    it(descriptions.getDataSourceId, function(done) {
+        test.getDataSourceId(done);
+    }).timeout(10000);
+    it(descriptions.queryUserAccountsData, function(done) {
+        setTimeout(test.queryUserAccountsData, 2000, done);
+    }).timeout(10000);
+    it(descriptions.tryToGetUnbelongedData, function(done) {
+        test.tryToGetUnbelongedData(done);
+    }).timeout(10000);
+    it(descriptions.getSuggestions, function(done) {
+        test.getSuggestions(done);
+    }).timeout(10000);
+    it(descriptions.tryToGetUnbelongedSuggestions, function(done) {
+        test.tryToGetUnbelongedSuggestions(done);
+    }).timeout(10000);
+    it(descriptions.cleanup, function(done) {
+        test.cleanup(done);
+    }).timeout(10000);
+});
 
 describe("Geting and manage alerts ... \n".bold, function(){
 
@@ -1154,8 +1287,8 @@ describe("Geting and manage alerts ... \n".bold, function(){
         }
         getListOfAlerts(components.first)
     }).timeout(10000);
-        
-    it('Shall add comments to the Alert', function(done){    
+
+    it('Shall add comments to the Alert', function(done){
         var addCommentsToAlert = function(component) {
             if ( component ) {
                 if ( component.alerts.length > 0 ) {
@@ -1240,7 +1373,7 @@ describe("Geting and manage alerts ... \n".bold, function(){
         }
         updateAlertStatus(components.first)
     })
-    
+
     it('Shall clear alert infomation', function(done) {
         var closeAlert = function(component) {
             if ( component ) {
@@ -1430,7 +1563,7 @@ describe("Adding user and posting email ...\n".bold, function() {
                 receiveraccountId = response.id;
                 done();
             }
-        }) 
+        })
     })
 });
 
@@ -1440,7 +1573,7 @@ describe("Invite receiver ...\n".bold, function() {
 
     it('Shall create invitation', function(done){
         // a mail will be sent to receiver
-        
+
         helpers.invitation.createInvitation(userToken, accountId, imap_username, function(err, response) {
             if (err) {
                 done(new Error("Cannot create invitation: " + err));
@@ -1453,7 +1586,7 @@ describe("Invite receiver ...\n".bold, function() {
         })
     }).timeout( 30 * 1000);
 
-    
+
     it('Shall get all invitations', function(done){
 
         helpers.invitation.getAllInvitations(userToken, accountId, function(err, response) {
@@ -1465,8 +1598,9 @@ describe("Invite receiver ...\n".bold, function() {
             }
         })
     })
-        
+
     it('Shall delete invitation and send again', function(done){
+
         helpers.invitation.deleteInvitations(userToken, accountId, imap_username, function(err, response) {
             if (err) {
                 done(new Error("Cannot delete invitation: " + err));
@@ -1507,7 +1641,7 @@ describe("Invite receiver ...\n".bold, function() {
                         }
                     }
                 })
-            }   
+            }
         })
         };
        getInvitation(function(err, response){
@@ -1527,7 +1661,7 @@ describe("Invite receiver ...\n".bold, function() {
             }
         })
     })
-    
+
     it('Shall not accept non-existing invitations, or crash', function(done){
         inviteId = 0;
         helpers.invitation.acceptInvitation(receiverToken, accountId, inviteId, function(err, response) {
@@ -1568,13 +1702,13 @@ describe("Invite receiver ...\n".bold, function() {
                         done();
                     }
                 })
-                
+
             }
         })
     })
-    
+
     it('Shall list all users for account', function (done) {
-        
+
         helpers.accounts.getAccountUsers(accountId, userToken, function (err, response) {
             if (err) {
                 done(new Error("Cannot list users for account: " + err));
@@ -1651,7 +1785,7 @@ describe("change password and delete receiver ... \n".bold, function(){
                 assert.notEqual(response, null ,'response is null')
                 assert.equal(response.status, 'Done')
                 done();
-            } 
+            }
         })
     })
 
@@ -1663,7 +1797,7 @@ describe("change password and delete receiver ... \n".bold, function(){
                 assert.notEqual(response, null ,'response is null')
                 assert.equal(response.status, 'Done')
                 done();
-            } 
+            }
         })
     })
 
@@ -1687,7 +1821,7 @@ describe("change password and delete receiver ... \n".bold, function(){
                 assert.notEqual(response, null ,'response is null')
                 assert.equal(response.status, 'Done')
                 done();
-            } 
+            }
         })
     })
 
@@ -1699,7 +1833,7 @@ describe("change password and delete receiver ... \n".bold, function(){
                 assert.notEqual(response, null ,'response is null')
                 assert.equal(response.status, 'Done')
                 done();
-            } 
+            }
         })
     })
 
@@ -1711,10 +1845,8 @@ describe("change password and delete receiver ... \n".bold, function(){
                 assert.notEqual(response, null ,'response is null')
                 assert.equal(response.status, 'Done')
                 done();
-            } 
+            }
         })
     })
- 
-})   
 
-}
+})

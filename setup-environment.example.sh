@@ -40,14 +40,19 @@ export KAFKA_PORT='9092'
 export KAFKA_HEARTBEAT_TOPIC='heartbeat'
 GEARPUMP='gearpump:8090'
 BACKEND='backend:8080'
-FRONTEND='frontend:4001'
+export FRONTEND='frontend:4001'
 NGINX='nginx'
 NGINX_PORT='443'
 REDIS='redis'
 REDIS_PORT='6379'
+export WEBSOCKET_SERVER="websocket-server:5000"
 
 OPENTSDB_URI='opentsdb'
 OPENTSDB_PORT=4242
+
+export GRAFANA_PORT=3000
+export GRAFANA_ADMIN='grafana'
+export GRAFANA_ADMIN_PASSWORD='intel123'
 
 MQTT_BROKER_URI='mqtt-broker'
 MQTT_BROKER_PORT=8883
@@ -57,10 +62,17 @@ MQTT_BROKER_PASSWORD='8dhh1f2471'
 FRONTEND_SYSTEMUSER="gateway@intel.com"
 FRONTEND_SYSTEMPASSWORD="7d501829lhbl1or0bb1784462c97bcad6"
 
-SMTP_HOST="${SMTP_HOST:-auth.smtp.1and1.co.uk}"
-SMTP_PORT="${SMTP_PORT:-587}"
-SMTP_USERNAME="${SMTP_USERNAME:-test.sender@streammyiot.com}"
-SMTP_PASSWORD="${SMTP_PASSWORD:-xxxxx}"
+export OISP_MINIO_ACCESS_KEY="oisp/jkllaksdlkfja"
+export OISP_MINIO_SECRET_KEY="8aj93h93hf91gs618hbc"
+MINIO_URL="minio"
+MINIO_PORT='9000'
+MINIO_USE_SSL='false'
+
+
+export SMTP_HOST="${SMTP_HOST:-auth.smtp.1and1.co.uk}"
+export SMTP_PORT="${SMTP_PORT:-587}"
+export SMTP_USERNAME="${SMTP_USERNAME:-test.sender@streammyiot.com}"
+export SMTP_PASSWORD="${SMTP_PASSWORD:-xxxxx}"
 
 OPENTSDB_PROPERTIES='{
   "uri": "'$OPENTSDB_URI'",
@@ -84,22 +96,39 @@ export OISP_BACKEND_JAEGER_CONFIG=\
   "tracing": false
 }'
 
-export OISP_TSDB_PROPERTIES='{}'    #=${OPENTSDB_PROPERTIES} for openTSDB
+#export OISP_TSDB_PROPERTIES='{}'    # for HBase
+export OISP_TSDB_PROPERTIES=${OPENTSDB_PROPERTIES} # for openTSDB
 
 # tsdbName can be
 # hbase
 #   then no tsdbProperties should be an empty class {}
-# opentsdb
+# openTSDB
 #   then the OISP_TSDB_PROPERTIES should contain url and port for openTSDB service
+# dummy
+#   dummy backend for testing (without real storage)
+# objectStorage can be
+# minio
+#   then the OISP_OBJECT_STORAGE_MINIO_CONFIG has to be passed in
 export OISP_BACKEND_CONFIG=\
 '{
-  "tsdbName": "hbase",
+  "tsdbName": "openTSDB",
+  "objectStoreName": "minio",
   "tsdbProperties": "%%OISP_TSDB_PROPERTIES",
   "kafkaConfig": "@@OISP_KAFKA_CONFIG",
   "zookeeperConfig": "@@OISP_ZOOKEEPER_CONFIG",
   "kerberosConfig": "@@OISP_KERBEROS_CONFIG",
   "hbaseConfig": "@@OISP_HBASE_CONFIG",
-  "jaegerConfig": "@@OISP_BACKEND_JAEGER_CONFIG"
+  "jaegerConfig": "@@OISP_BACKEND_JAEGER_CONFIG",
+  "objectStoreProperties": "%%OISP_OBJECT_STORE_MINIO_PROPERTIES"
+}'
+
+export OISP_OBJECT_STORE_MINIO_PROPERTIES=\
+'{
+  "endPoint": "'${MINIO_URL}'",
+  "port": "'${MINIO_PORT}'",
+  "useSSL": "'${MINIO_USE_SSL}'",
+  "accessKey": "'${OISP_MINIO_ACCESS_KEY}'",
+  "secretKey": "'${OISP_MINIO_SECRET_KEY}'"
 }'
 
 export OISP_FRONTEND_CONFIG=\
@@ -114,6 +143,7 @@ export OISP_FRONTEND_CONFIG=\
 	"mailConfig": "@@OISP_MAIL_CONFIG",
 	"ruleEngineConfig": "@@OISP_RULEENGINE_CONFIG",
 	"gatewayConfig": "@@OISP_GATEWAY_CONFIG",
+    "grafanaConfig": "@@OISP_GRAFANA_CONFIG",
     "jaegerTracing": false
 }'
 
@@ -169,6 +199,16 @@ export OISP_HADOOP_PROPERTIES=\
 export OISP_OPENTSDB_CONFIG=\
 '{
   "port": '$OPENTSDB_PORT'
+}'
+
+# dataSourceHost should be the name of the data source container (e.g opentsdb)
+export OISP_GRAFANA_CONFIG=\
+'{
+  "port": "'$GRAFANA_PORT'",
+  "adminUser": "'$GRAFANA_ADMIN'",
+  "adminPassword": "'$GRAFANA_ADMIN_PASSWORD'",
+  "dataSourceHost": "opentsdb",
+  "dataSourcePort": "'$OPENTSDB_PORT'"
 }'
 
 export OISP_POSTGRES_CONFIG=\

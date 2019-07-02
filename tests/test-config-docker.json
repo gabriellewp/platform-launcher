@@ -53,5 +53,21 @@
 	                "actuation": "device/metric/{deviceid}/actuation"
 	            }
 		}
+	},
+	"grafana": {
+		"host": "localhost",
+		"port": 4002,
+		"protocol": "http",
+		"subPath": "/ui/grafana",
+		"strictSSL": "false",
+		"timeout": 30000,
+		"proxy": {
+			"host": false,
+			"port": false
+		},
+		"admin": "grafana",
+		"password": "intel123",
+		"datasourceSuggest": "/api/suggest",
+		"datasourceQuery": "/api/query"
 	}
 }

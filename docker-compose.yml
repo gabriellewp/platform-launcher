@@ -126,8 +126,9 @@ services:
     build:
       context: ./oisp-frontend/public-interface/nginx
       args:
-        - WEBSOCKET_SERVER=websocket-server:5000
-        - DASHBOARD_SERVER=frontend:4001
+        - WEBSOCKET_SERVER=${WEBSOCKET_SERVER}
+        - DASHBOARD_SERVER=${FRONTEND}
+        - DOCKER_TAG=${DOCKER_TAG}
       labels:
         - oisp=true
         - oisp.git_commit=${GIT_COMMIT_FRONTEND}
@@ -164,6 +165,7 @@ services:
     command: ./wait-for-it.sh postgres:5432 -t 300 -- ./wait-for-it.sh kafka:9092 -t 300 -- ./scripts/docker-start.sh
   frontend:
     image: oisp/frontend:${DOCKER_TAG}
+    restart: on-failure
     build:
       context: ./oisp-frontend/public-interface
       labels:
@@ -171,6 +173,8 @@ services:
         - ois.git_commit=${GIT_COMMIT_FRONTEND}
     ports:
       - 4001:4001
+      - 4002:4002
+      - 4003:4003
     depends_on:
       - postgres
       - redis
@@ -195,6 +199,7 @@ services:
       - OISP_HBASE_CONFIG=${OISP_HBASE_CONFIG}
       - OISP_HADOOP_PROPERTIES=${OISP_HADOOP_PROPERTIES}
       - OISP_ZOOKEEPER_CONFIG=${OISP_ZOOKEEPER_CONFIG}
+      - OISP_GRAFANA_CONFIG=${OISP_GRAFANA_CONFIG}
       - TEST=${TEST}
       - NODE_ENV=local
   backend:
@@ -220,8 +225,9 @@ services:
       - OISP_HADOOP_PROPERTIES=${OISP_HADOOP_PROPERTIES}
       - OISP_TSDB_PROPERTIES=${OISP_TSDB_PROPERTIES}
       - OISP_BACKEND_JAEGER_CONFIG
+      - OISP_OBJECT_STORE_MINIO_PROPERTIES
   hdfs-namenode:
-    image: singularities/hadoop
+    image: singularities/hadoop:2.8
     command: start-hadoop namenode
     volumes:
       - ./data/hdfs/name:/opt/hdfs
@@ -237,7 +243,7 @@ services:
       - "13562:13562"
       - "19888:19888"
   hdfs-datanode:
-    image: singularities/hadoop
+    image: singularities/hadoop:2.8
     command: start-hadoop datanode hdfs-namenode
     volumes:
       - ./data/hdfs/data:/opt/hdfs
@@ -272,6 +278,8 @@ services:
     image: oisp/opentsdb:${DOCKER_TAG}
     build:
       context: ./docker-opentsdb
+      args:
+        - DOCKER_TAG=${DOCKER_TAG}
       labels:
         - oisp=true
         - ois.git_commit=${GIT_COMMIT_OPENTSDB}
@@ -287,6 +295,7 @@ services:
       - OISP_HADOOP_PROPERTIES=${OISP_HADOOP_PROPERTIES}
       - OISP_TSDB_PROPERTIES=${OISP_TSDB_PROPERTIES}
   mqtt-gateway:
+    image: oisp/mqtt-gateway:${DOCKER_TAG}
     build:
       context: ./oisp-mqtt-gw
       dockerfile: Dockerfile-gateway
@@ -304,6 +313,7 @@ services:
       - ./oisp-mqtt-gw/lib:/app/lib
     command: ./wait-for-it.sh broker:8883 -t 300 -- ./wait-for-it.sh redis:6379 -t 300
   mqtt-broker:
+    image: oisp/mqtt-broker:${DOCKER_TAG}
     build:
       context: ./oisp-mqtt-gw
       dockerfile: Dockerfile-broker
@@ -316,3 +326,28 @@ services:
       - OISP_REDIS_CONFIG
     volumes:
       - ./data/keys:/app/keys
+  minio:
+    image: minio/minio:RELEASE.2019-02-20T22-44-29Z
+    volumes:
+      - ./data/S3:/data
+    ports:
+      - "9000:9000"
+    environment:
+      - MINIO_ACCESS_KEY=${OISP_MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${OISP_MINIO_SECRET_KEY}
+    command: minio server /data
+  grafana:
+    image: oisp/grafana:${DOCKER_TAG}
+    build:
+      context: ./docker-grafana
+      labels:
+        - oisp=true
+        - oisp.git_commit=${GIT_COMMIT_PLATFORM_LAUNCHER}
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SERVER_DOMAIN=frontend
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/ui/grafana
+      - GF_SERVER_HTTP_PORT=${GRAFANA_PORT}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
