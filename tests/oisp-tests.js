@@ -1849,4 +1849,4 @@ describe("change password and delete receiver ... \n".bold, function(){
         })
     })
 
-})
+})}
