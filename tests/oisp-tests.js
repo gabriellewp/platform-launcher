@@ -53,6 +53,25 @@ var recipientEmail = imap_username;
 var rules = [];
 
 
+// @description Checks whether variables are set. returns true if one of the
+// variables are set
+// @params skipifset []string array of case names in test-config.json under skip.
+// The last one set to "true" or "false" preceeds, so the order should be from general
+// to specific.
+var checkTestCondition = function(skipifset) {
+    var found = false;
+    skipifset.forEach(function(caseName) {
+	if (config.skip[caseName] == "true") {
+	    found = true
+	} else if (config.skip[caseName] == "false") {
+	    found = false
+	} else if (config.skip[caseName] != "") {
+	    console.error("config.skip." + caseName + ' must be "true", "false" or ""')
+	    process.exit(1)
+	}
+    })
+    return found;
+}
 
 //-------------------------------------------------------------------------------------------------------
 // Rules
@@ -865,6 +884,11 @@ describe("Creating and getting components ... \n".bold, function() {
 var ignoreagain=function(){
 
 describe("Creating rules ... \n".bold, function() {
+    before(function(){
+        if (checkTestCondition(["non_essential", "rules"])) {
+            this.skip();
+        }
+    });
     it('Shall create rules', function(done) {
         var nbRules = 0;
         components.list.forEach(function(component) {
@@ -926,7 +950,11 @@ describe("Creating rules ... \n".bold, function() {
 });
 
 describe("Sending observations and checking rules ...\n".bold, function() {
-
+    before(function(){
+            if (checkTestCondition(["non_essential", "rules", "data_sending"])) {
+                this.skip();
+            }
+    });
     it('Shall send observation and check rules', function(done) {
         assert.notEqual(proxyConnector, null, "Invalid websocket proxy connector")
 
@@ -1006,6 +1034,11 @@ describe("Sending observations and checking rules ...\n".bold, function() {
     //---------------------------------------------------------------
 
     it('Shall check received emails', function(done) {
+        before(function(){
+            if (checkTestCondition(["non_essential", "email"])) {
+                this.skip();
+            }
+        });
         var expectedEmailReasons = [];
         var ignoreme = function() {
         components.list.forEach(function(component) {
@@ -1105,9 +1138,12 @@ describe("Do MQTT data sending subtests".bold, function() {
     }).timeout(10000);*/
 });
 
-
-describe("Do time based rule subtests ...".bold,
-	 function() {
+describe("Do time based rule subtests ...".bold, function() {
+    before(function(){
+            if (checkTestCondition(["non_essential", "rules"])) {
+                this.skip();
+            }
+    });
 	     var test;
 	     var descriptions = require("./subtests/timebased-rule-tests").descriptions;
 	     it(descriptions.createTbRules,function(done) {
@@ -1120,11 +1156,15 @@ describe("Do time based rule subtests ...".bold,
 	     it(descriptions.cleanup,function(done) {
 		 test.cleanup(done);
 	     }).timeout(10000);
-         });
+    });
 
 
-describe("Do statistics rule subtests ...".bold,
-	 function() {
+describe("Do statistics rule subtests ...".bold, function() {
+    before(function(){
+        if (checkTestCondition(["non_essential", "rules"])) {
+            this.skip();
+        }
+    });
 	     var test;
 	     var descriptions = require("./subtests/statistic-rule-tests").descriptions;
 	     it(descriptions.createStatisticsRules,function(done) {
@@ -1137,9 +1177,14 @@ describe("Do statistics rule subtests ...".bold,
 	     it(descriptions.cleanup,function(done) {
 		 test.cleanup(done);
 	     }).timeout(10000);
-         });
-describe("Do data sending subtests ...".bold,
-  function() {
+});
+
+describe("Do data sending subtests ...".bold, function() {
+    before(function(){
+        if (checkTestCondition(["non_essential", "data_sending"])) {
+            this.skip();
+        }
+    });
     var test;
     var descriptions = require("./subtests/data-sending-tests").descriptions;
      it(descriptions.sendAggregatedDataPoints,function(done) {
@@ -1227,6 +1272,11 @@ describe("Do data sending subtests ...".bold,
  });
 
 describe("Grafana subtests...".bold, function() {
+    before(function(){
+        if (checkTestCondition(["non_essential", "grafana"])) {
+            this.skip();
+        }
+    });
     var test;
     var descriptions = require("./subtests/grafana-tests").descriptions;
     it(descriptions.prepareGrafanaTestSetup, function(done) {
@@ -1259,8 +1309,50 @@ describe("Grafana subtests...".bold, function() {
     }).timeout(10000);
 });
 
-describe("Geting and manage alerts ... \n".bold, function(){
+   describe("Do MQTT data sending subtests ...".bold, function() {
+       before(function(){
+           if (checkTestCondition(["non_essential", "mqtt"])) {
+               this.skip();
+           }
+       });
+       var test;
+       var descriptions = require("./subtests/mqtt-data-sending-tests").descriptions;
+       it(descriptions.setup, function(done) {
+         test = require("./subtests/mqtt-data-sending-tests").test(userToken, accountId, deviceId, deviceToken, cbManager, mqttConnector);
+         test.setup(done);
+       }).timeout(10000);
+       it(descriptions.sendSingleDataPoint, function(done) {
+         test.sendSingleDataPoint(done);
+       }).timeout(10000);
+       it(descriptions.sendMultipleDataPoints, function(done) {
+         test.sendMultipleDataPoints(done);
+       }).timeout(10000);
+       it(descriptions.sendDataPointsWithAttributes, function(done) {
+         test.sendDataPointsWithAttributes(done);
+       }).timeout(10000);
+       it(descriptions.waitForBackendSynchronization, function(done) {
+         test.waitForBackendSynchronization(done);
+       }).timeout(10000);
+       it(descriptions.receiveSingleDataPoint, function(done) {
+         test.receiveSingleDataPoint(done);
+       }).timeout(10000);
+       it(descriptions.receiveMultipleDataPoints, function(done) {
+         test.receiveMultipleDataPoints(done);
+       }).timeout(10000);
+       it(descriptions.receiveDataPointsWithAttributes, function(done) {
+         test.receiveDataPointsWithAttributes(done);
+       }).timeout(10000);
+       it(descriptions.cleanup, function(done) {
+         test.cleanup(done);
+       }).timeout(10000);
+    });
 
+describe("Geting and manage alerts ... \n".bold, function(){
+    before(function(){
+        if (checkTestCondition(["non_essential", "alerts"])) {
+            this.skip();
+        }
+    });
     it('Shall get list of alerts', function(done) {
         var getListOfAlerts = function(component) {
             if ( component ) {
@@ -1401,7 +1493,11 @@ describe("Geting and manage alerts ... \n".bold, function(){
 })
 
 describe("update rules and create draft rules ... \n".bold, function(){
-
+    before(function(){
+        if (checkTestCondition(["non_essential", "rules"])) {
+            this.skip();
+        }
+    });
     var cloneruleId;
 
     it('Shall clone a rule', function(done) {
@@ -1502,6 +1598,11 @@ describe("update rules and create draft rules ... \n".bold, function(){
 })
 
 describe("Adding user and posting email ...\n".bold, function() {
+    before(function(){
+        if (checkTestCondition(["non_essential", "email"])) {
+            this.skip();
+        }
+    });
     it("Shall add a new user and post email", function(done) {
         assert.isNotEmpty(imap_username, "no email provided");
         assert.isNotEmpty(imap_password, "no password provided");
@@ -1568,7 +1669,11 @@ describe("Adding user and posting email ...\n".bold, function() {
 });
 
 describe("Invite receiver ...\n".bold, function() {
-
+    before(function(){
+        if (checkTestCondition(["non_essential", "email"])) {
+            this.skip();
+        }
+    });
     var inviteId = null;
 
     it('Shall create invitation', function(done){
@@ -1721,7 +1826,11 @@ describe("Invite receiver ...\n".bold, function() {
 })
 
 describe("change password and delete receiver ... \n".bold, function(){
-
+    before(function(){
+            if (checkTestCondition(["non_essential", "email"])) {
+                this.skip();
+            }
+    });
     it('Shall request change receiver password', function(done) {
     var username = process.env.USERNAME;
     helpers.users.requestUserPasswordChange(username, function(err, response) {

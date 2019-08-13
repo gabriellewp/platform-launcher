@@ -56,7 +56,7 @@
 	},
 	"grafana": {
 		"host": "localhost",
-		"port": 4002,
+		"port": 80,
 		"protocol": "http",
 		"subPath": "/ui/grafana",
 		"strictSSL": "false",
@@ -69,5 +69,15 @@
 		"password": "intel123",
 		"datasourceSuggest": "/api/suggest",
 		"datasourceQuery": "/api/query"
+	},
+	"skip":
+	{
+		"non_essential": "${OISP_TESTS_SKIP_NON_ESSENTIAL}",
+		"rules": "${OISP_TESTS_SKIP_RULES}",
+		"data_sending": "${OISP_TESTS_SKIP_DATA_SENDING}",
+		"email": "${OISP_TESTS_SKIP_EMAIL}",
+		"grafana": "${OISP_TESTS_SKIP_GRAFANA}",
+		"mqtt": "${OISP_TESTS_SKIP_MQTT}",
+		"alerts": "${OISP_TESTS_SKIP_ALERTS}"
 	}
 }
