@@ -881,6 +881,25 @@ describe("Creating and getting components ... \n".bold, function() {
     }).timeout(20000);
 
 });
+
+describe("Do MQTT data sending subtests... \n".bold, function() {
+    var test;
+    var descriptions = require("./subtests/mqtt-data-sending-tests").descriptions;
+    it(descriptions.setup, function(done) {
+        test = require("./subtests/mqtt-data-sending-tests").test(userToken, accountId, deviceId, deviceToken, cbManager, mqttConnector);
+        test.setup(done);
+    }).timeout(10000);
+    it(descriptions.sendSingleDataPoint, function(done) {
+        test.sendSingleDataPoint(done);
+    }).timeout(10000);
+    // it(descriptions.retrieveSentData, function(done) {
+    //     test.retrieveSentData(done);
+    // }).timeout(10000);
+    it(descriptions.waitForBackendSynchronization, function(done) {
+        test.waitForBackendSynchronization(done);
+    }).timeout(10000);
+});
+
 var ignoreagain=function(){
 
 describe("Creating rules ... \n".bold, function() {
@@ -1117,27 +1136,6 @@ describe("Sending observations and checking rules ...\n".bold, function() {
 
 });
 
-describe("Do MQTT data sending subtests".bold, function() {
-    var test;
-    var descriptions = require("./subtests/mqtt-data-sending-tests").descriptions;
-    it(descriptions.setup, function(done) {
-        test = require("./subtests/mqtt-data-sending-tests").test(userToken, accountId, deviceId, deviceToken, cbManager, mqttConnector);
-        test.setup(done);
-    }).timeout(10000);
-    it(descriptions.sendSingleDataPoint, function(done) {
-        test.sendSingleDataPoint(done);
-    }).timeout(10000);
-    it(descriptions.retrieveSentData, function(done) {
-         test.retrieveSentData(done);
-    }).timeout(10000);
-    it(descriptions.waitForBackendSynchronization, function(done) {
-        test.waitForBackendSynchronization(done);
-    }).timeout(10000);
-    /*it(descriptions.cleanup, function(done) {
-          test.cleanup(done);
-    }).timeout(10000);*/
-});
-
 describe("Do time based rule subtests ...".bold, function() {
     before(function(){
             if (checkTestCondition(["non_essential", "rules"])) {
@@ -1308,44 +1306,6 @@ describe("Grafana subtests...".bold, function() {
         test.cleanup(done);
     }).timeout(10000);
 });
-
-   describe("Do MQTT data sending subtests ...".bold, function() {
-       before(function(){
-           if (checkTestCondition(["non_essential", "mqtt"])) {
-               this.skip();
-           }
-       });
-       var test;
-       var descriptions = require("./subtests/mqtt-data-sending-tests").descriptions;
-       it(descriptions.setup, function(done) {
-         test = require("./subtests/mqtt-data-sending-tests").test(userToken, accountId, deviceId, deviceToken, cbManager, mqttConnector);
-         test.setup(done);
-       }).timeout(10000);
-       it(descriptions.sendSingleDataPoint, function(done) {
-         test.sendSingleDataPoint(done);
-       }).timeout(10000);
-       it(descriptions.sendMultipleDataPoints, function(done) {
-         test.sendMultipleDataPoints(done);
-       }).timeout(10000);
-       it(descriptions.sendDataPointsWithAttributes, function(done) {
-         test.sendDataPointsWithAttributes(done);
-       }).timeout(10000);
-       it(descriptions.waitForBackendSynchronization, function(done) {
-         test.waitForBackendSynchronization(done);
-       }).timeout(10000);
-       it(descriptions.receiveSingleDataPoint, function(done) {
-         test.receiveSingleDataPoint(done);
-       }).timeout(10000);
-       it(descriptions.receiveMultipleDataPoints, function(done) {
-         test.receiveMultipleDataPoints(done);
-       }).timeout(10000);
-       it(descriptions.receiveDataPointsWithAttributes, function(done) {
-         test.receiveDataPointsWithAttributes(done);
-       }).timeout(10000);
-       it(descriptions.cleanup, function(done) {
-         test.cleanup(done);
-       }).timeout(10000);
-    });
 
 describe("Geting and manage alerts ... \n".bold, function(){
     before(function(){

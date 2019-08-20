@@ -119,10 +119,9 @@ function searchData(from, to, userToken, accountId, deviceId, cid, queryMeasureL
 }
 
 
-function submitData(testApi, value, deviceToken, accountId, deviceId, cid, cb) {
-    console.log("callback value", cb)
+function submitData(value, deviceToken, accountId, deviceId, cid, cb) {
     if (!cb) {
-        throw "Callback requiredaasfasf";
+        throw "Callback required";
     }
     var ts = new Date().getTime();
 
@@ -139,54 +138,8 @@ function submitData(testApi, value, deviceToken, accountId, deviceId, cid, cb) {
             }]
         }
     }
-    
-    // api.data.submitData(data, function(err, response) {
-    //     if (err) {
-    //         cb(err)
-    //     } else {
-    //         if (response) {
-    //             cb(null, response)
-    //         }
-    //     }
-    // });
-    if(testApi!="rest"){
-        //using mqtt proxyconnector
-        console.log("testapi 1")
-        console.log(deviceId,":", deviceToken)
-        testApi.setCredential(deviceId, deviceToken);
-        // var metric = new Metric();
-        // metric.accountId = data.body.accountId;
-        // metric.did = data.deviceId;
-        // metric.gatewayId = data.deviceId;
-        // metric.deviceToken = data.userToken;
-    var data = {
-        userToken: deviceToken,
-        deviceId: deviceId,
-        accountId: accountId,
-        did: deviceId,
-        body: {
-            accountId: accountId,
-            on: ts,
-            data: [{
-                componentId: cid,
-                value: value.toString(),
-                on: ts
-            }]
-        }
-    }
-        data.convertToMQTTPayload = function(){
-      return "Hello world";
-    }
-        testApi.data(data, function(response){
-            if (cb) {
-                console.log("sending data via mqtt success")
-                cb(null, response);
-            }
 
-        });
-    }else{
-        console.log("testapi 2")
-        api.data.submitData(data, function(err, response) {
+    api.data.submitData(data, function(err, response) {
         if (err) {
             cb(err)
         } else {
@@ -195,11 +148,9 @@ function submitData(testApi, value, deviceToken, accountId, deviceId, cid, cb) {
             }
         }
     });
-    }
 }
 
-function submitDataList(testApi, valueList, deviceToken, accountId, deviceId, cidList, cb) {
-    console.log("callback value", cb)
+function submitDataList(valueList, deviceToken, accountId, deviceId, cidList, cb) {
     if (!cb) {
         throw "Callback required";
     }
@@ -216,20 +167,28 @@ function submitDataList(testApi, valueList, deviceToken, accountId, deviceId, ci
     }
 
     valueList.forEach(function(element){
-      var toPush = {
-        componentId: cidList[element.component],
-        value: (typeof element.value === 'string' || Buffer.isBuffer(element.value)) ? element.value : element.value.toString(),
-        on: element.ts
-      }
-      if (element.loc) {
-        toPush.loc = element.loc;
-      }
-      if (element.attributes !== undefined){
-        toPush.attributes = element.attributes;
-      }
-      data.body.data.push(toPush);
+        var toPush = {
+            componentId: cidList[element.component],
+            value: (typeof element.value === 'string' || Buffer.isBuffer(element.value)) ? element.value : element.value.toString(),
+            on: element.ts
+        }
+        if (element.loc) {
+            toPush.loc = element.loc;
+        }
+        if (element.attributes !== undefined){
+            toPush.attributes = element.attributes;
+        }
+        data.body.data.push(toPush);
     });
-    
+    api.data.submitData(data, function(err, response) {
+        if (err) {
+            cb(err)
+        } else {
+            if (response) {
+                cb(null, response)
+            }
+        }
+    });
 }
 
 function searchDataAdvanced(from, to, userToken, accountId, deviceId, cidList, showMeasureLocation, returnedMeasureAttributes, aggregations, countOnly, cb) {

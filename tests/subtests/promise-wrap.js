@@ -391,6 +391,7 @@ var activateDevice = (userToken, accountId, deviceId) => {
 
 
 var mqttSetCredential = (connector, userToken, deviceId) => {
+    console.log("mqtt set credential")
   return new Promise(function(resolve, reject){
     helpers.mqtt.setCredential(connector, userToken, deviceId, function(err, response) {
       if (err) {
@@ -403,6 +404,7 @@ var mqttSetCredential = (connector, userToken, deviceId) => {
 };
 
 var mqttSubmitData = (connector, value, deviceToken, accountId, deviceId, cid) => {
+    console.log("mqtt submit data")
   return new Promise(function(resolve, reject){
     helpers.mqtt.submitData(connector, value, deviceToken, accountId, deviceId, cid, function(err, response) {
       if (err && err.status === 0) {

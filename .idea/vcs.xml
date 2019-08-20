@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/oisp-backend" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/oisp-beam-rule-engine" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/oisp-frontend" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/oisp-gearpump-rule-engine" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/oisp-mqtt-gw" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/oisp-websocket-server" vcs="Git" />
+  </component>
+</project>

@@ -379,6 +379,23 @@ var test = function(userToken, accountId, deviceId, deviceToken, cbManager, mqtt
               done(err);
             });
         },
+        "retrieveSentData" : function(done){
+            var listOfExpectedResults = flattenArray(dataValues1);
+            promtests.searchData(Date.now() - 1000000, -1, deviceToken, accountId, newDeviceId, componentId[0], false, {})
+                .then((result) => {
+                    console.log("result", result)
+                if (result.series.length != 1) done("Wrong number of point series!");
+            var comparisonResult = comparePoints(listOfExpectedResults, result.series[0].points);
+            if (comparisonResult === true) {
+                done();
+            } else {
+                done(comparisonResult);
+            }
+        })
+        .catch((err) => {
+                done(err);
+        });
+        },
         "receiveSingleDataPoint": function(done) {
           var listOfExpectedResults = flattenArray(dataValues1);
           promtests.searchData(BASE_TIMESTAMP, 1 + BASE_TIMESTAMP, deviceToken, accountId, newDeviceId, componentId[0], false, {})
@@ -485,7 +502,8 @@ var descriptions = {
     "receiveMultipleDataPoints": "Receive multiple data points",
     "receiveDataPointsWithAttributes": "Receive data pints with attributes and location",
     "waitForBackendSynchronization": "Waiting maximal tolerable time backend needs to flush so that points are available",
-    "setup": "Setup device and components for subtest"
+    "setup": "Setup device and components for subtest",
+    "retrieveSentData" : "Retrieving data submission"
 };
 
 module.exports = {

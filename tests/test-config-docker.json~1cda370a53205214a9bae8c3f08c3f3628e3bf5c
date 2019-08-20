@@ -35,23 +35,6 @@
 		        "host": "localhost",
 		        "port": 9092,
 		        "topic": "heartbeat"
-		},
-			"mqtt": {
-	            "host": "localhost",
-	            "port": 8883,
-	            "qos": 1,
-	            "retain": false,
-	            "secure": true,
-	            "strictSSL": true,
-	            "retries": 5,
-	            "topic": {
-	                "metric_topic": "server/metric/{accountid}/{deviceid}",
-	                "health": "server/devices/{deviceid}/health",
-	                "health_status": "device/{deviceid}/health",
-	                "control_command": "device/{gwid}/control",
-	                "ingestion_response": "device/{deviceid}/metric/response",
-	                "actuation": "device/metric/{deviceid}/actuation"
-	            }
 		}
 	},
 	"grafana": {
@@ -69,14 +52,5 @@
 		"password": "intel123",
 		"datasourceSuggest": "/api/suggest",
 		"datasourceQuery": "/api/query"
-	},
-	"skip":
-	{
-		"non_essential": "${OISP_TESTS_SKIP_NON_ESSENTIAL}",
-		"rules": "${OISP_TESTS_SKIP_RULES}",
-		"data_sending": "${OISP_TESTS_SKIP_DATA_SENDING}",
-		"email": "${OISP_TESTS_SKIP_EMAIL}",
-		"grafana": "${OISP_TESTS_SKIP_GRAFANA}",
-		"alerts": "${OISP_TESTS_SKIP_ALERTS}"
 	}
 }
